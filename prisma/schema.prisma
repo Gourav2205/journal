@@ -1,0 +1,58 @@
+// Prisma schema for Trading Journal App
+// Defines User and Trade models with relationships
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - stores user information from Clerk authentication
+model User {
+  id        String   @id @default(cuid()) // Primary key
+  clerkId   String   @unique // Clerk user ID for authentication
+  email     String   @unique // User email address
+  firstName String?  // Optional first name
+  lastName  String?  // Optional last name
+  imageUrl  String?  // Profile image URL from Clerk
+  trades    Trade[]  // One-to-many relationship with trades
+  createdAt DateTime @default(now()) // Account creation timestamp
+  updatedAt DateTime @updatedAt // Last update timestamp
+
+  @@map("users") // Database table name
+}
+
+// Trade model - stores individual trading records
+model Trade {
+  id            String   @id @default(cuid()) // Primary key
+  userId        String   // Foreign key to User
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Trade details
+  date          DateTime // Trade execution date
+  pair          String   // Currency pair (e.g., "EURUSD", "GBPJPY")
+  type          String   // Trade type: "Buy" or "Sell"
+  entry         Float    // Entry price
+  sl            Float    // Stop Loss price
+  tp            Float    // Take Profit price
+  result        String   // Trade result: "Win" or "Loss"
+  
+  // Calculated fields
+  pips          Float?   // Pips gained/lost (optional)
+  rr            Float    // Risk:Reward ratio
+  
+  // Additional information
+  notes         String?  // Optional trade notes/analysis
+  screenshotUrl String?  // Cloudinary image URL for trade screenshot
+  
+  // Timestamps
+  createdAt     DateTime @default(now()) // Record creation timestamp
+  updatedAt     DateTime @updatedAt // Last update timestamp
+
+  @@map("trades") // Database table name
+  @@index([userId]) // Index for faster user queries
+  @@index([date]) // Index for date-based queries
+}
